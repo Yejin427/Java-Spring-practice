@@ -1,0 +1,134 @@
+<div id="comments-list">
+    {{#commentDtos}}
+        <div class="card m-2" id="comments-{{id}}">
+            <div class="card-header">
+                {{nickname}}
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#comment-edit-modal"
+                        data-bs-id="{{id}}"
+                        data-bs-nickname="{{nickname}}"
+                        data-bs-body="{{body}}"
+                        data-bs-article-id="{{articleId}}">
+                    수정
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger comment-delete-btn"
+                        data-comment-id="{{id}}">삭제</button>
+            </div>
+            <div class="card-body">
+                {{body}}
+            </div>
+        </div>
+    {{/commentDtos}}
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="comment-edit-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">댓글 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 댓글 수정 -->
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">닉네임</label>
+                        <input class="form-control form-control-sm" id="edit-comment-nickname" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">댓글 내용</label>
+                        <textarea class="form-control form" rows="3" id="edit-comment-body"></textarea>
+                    </div>
+                    <!-- hidden input -->
+                    <input type="hidden" id="edit-comment-id">
+                    <input type="hidden" id="edit-comment-article-id">
+
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="comment-update-btn">수정 완료</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- modeal event -->
+<script>
+{
+    const commentEditModal = document.querySelector("#comment-edit-modal");
+    commentEditModal.addEventListener("show.bs.modal", function(event) {
+        //trigger button
+        const triggerBtn = event.relatedTarget;
+
+        //data 가져오기
+        const id = triggerBtn.getAttribute("data-bs-id");
+        const nickname = triggerBtn.getAttribute("data-bs-nickname");
+        const body = triggerBtn.getAttribute("data-bs-body");
+        const articleId = triggerBtn.getAttribute("data-bs-articleId");
+
+        //data 반영
+        document.querySelector("#edit-comment-nickname").value = nickname;
+        document.querySelector("#edit-comment-body").value = body;
+        document.querySelector("#edit-comment-id").value = id;
+        document.querySelector("#edit-comment-article-id").value = articleId;
+
+    });
+}
+{
+    //수정 완료 btn click
+    const commentUpdateBtn = document.querySelector("#comment-update-btn");
+    commentUpdateBtn.addEventListener("click", function(){
+        const comment = {
+            id: document.querySelector("#edit-comment-id").value,
+            nickname: document.querySelector("#edit-comment-nickname").value,
+            body: document.querySelector("#edit-comment-body").value,
+            article_id: document.querySelector("#edit-comment-article-id").value
+        };
+
+        const url = "/api/comments/" + comment.id;
+        fetch(url, {
+            method: "PATCH",
+            body: JSON.stringify(comment),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(function(response){
+            const msg = (response.ok) ? "댓글 수정 완료." : "댓글 수정 실패!";
+            alert(msg);
+            window.location.reload();
+        });
+    });
+}
+</script>
+
+<!-- 뎃글 삭제 -->
+<script>
+{
+    const commentDeleteBtns = document.querySelectorAll(".comment-delete-btn");
+    commentDeleteBtns.forEach(btn => {
+        btn.addEventListener("click", (event) => {
+            const commentDeleteBtn = event.srcElement;
+
+            //삭제 commentid
+            const commentId = commentDeleteBtn.getAttribute("data-comment-id");
+            console.log(`삭제 버튼 클릭: ${commentId}번 댓글`);
+            //삭제 api
+            const url = `/api/comments/${commentId}`;
+            fetch(url, {
+                method: "DELETE"
+            }).then(response => {
+                //댓글 삭제 실패
+                if(!response.ok){
+                    alert("댓글 삭제 실패!");
+                    return;
+                }
+                //성공 시 화면에서 지움
+                const target = document.querySelector(`#comments-${commentId}`);
+                target.remove();
+            });
+        });
+    });
+}
+</script>
